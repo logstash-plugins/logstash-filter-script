@@ -1,3 +1,5 @@
+api_version 1
+
 filter do |event|
   if event.get("foo") == "bar"
     dead_letter(event, "Foo == bar!")

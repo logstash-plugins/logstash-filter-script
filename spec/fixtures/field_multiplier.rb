@@ -1,3 +1,9 @@
+# You *must* declare the API version this script is written to
+# This prevents scripts from incorrectly running under other API versions
+api_version 1
+
+# Disables mutex around the `filter` function
+# Only use this if you know your code is threadsafe!
 concurrency :shared 
 
 register do |params|

@@ -1,3 +1,5 @@
+api_version 1
+
 register do |params|
 end
 

@@ -1,6 +1,11 @@
 class LogStash::Filters::Script::RubyScript
+  # Current API Version
+  API_VERSION=1
+  # List of Supported API versions
+  SUPPORTED_API_VERSIONS=[API_VERSION]
+
   include ::LogStash::Util::Loggable
-  require "logstash/filters/script/ruby_script_context"
+  require "logstash/filters/script/ruby_script/context"
   
   attr_reader :script, :script_path, :dlq_writer
   

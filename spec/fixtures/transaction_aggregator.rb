@@ -2,6 +2,8 @@
 # Takes as a parameter the amount of time to wait beforing flushing an
 # incomplete transaction
 
+api_version 1
+
 register do |params|
   @transactions = Hash.new do |h,k| 
     h[k] = {

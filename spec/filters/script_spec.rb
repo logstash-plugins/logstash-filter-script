@@ -76,4 +76,24 @@ describe LogStash::Filters::Script do
       end.not_to raise_error
     end
   end
+
+  describe "scripts with no API Version" do
+    let(:script_filename) { 'no_api_version.rb' }
+
+    it "should error out during register" do
+      expect do
+        filter.register
+      end.to raise_error(::LogStash::ConfigurationError)
+    end
+  end
+
+  describe "scripts with a bad API version" do
+    let(:script_filename) { 'bad_api_version.rb' }
+
+    it "should error out during register" do
+      expect do
+        filter.register
+      end.to raise_error(::LogStash::ConfigurationError)
+    end
+  end
 end
