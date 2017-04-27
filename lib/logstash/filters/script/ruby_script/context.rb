@@ -114,10 +114,13 @@ class LogStash::Filters::Script::RubyScript::Context
     return if !@flush_block
 
     if @concurrency == :shared
+      #execution_context.instance_exec(&flush_block)
       @script_lock.synchronize { @execution_context.instance_exec(&flush_block) }
     else
-      @flush_block.call()
+      @script_lock.synchronize { @execution_context.instance_exec(&flush_block) }
     end
+  rescue => e
+    @logger.error("Error during flush!", :message => e.message, :class => e.class.name, :backtrace => e.backtrace)
   end
 
   def execute_close

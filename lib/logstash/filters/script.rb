@@ -79,4 +79,8 @@ class LogStash::Filters::Script < LogStash::Filters::Base
       @script.flush
     end
   end
+
+  def periodic_flush
+    true
+  end
 end
