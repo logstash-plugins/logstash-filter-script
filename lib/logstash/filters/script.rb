@@ -13,7 +13,7 @@ class LogStash::Filters::Script < LogStash::Filters::Base
   config :file, :validate => :path, :required => true
   
   # Parameters for this specific script
-  config :script_params, :type => :hash
+  config :script_params, :type => :hash, :default => {}
 
   # Tag to add to events that cause an exception in the script filter
   config :tag_on_exception, :type => :string, :default => "_script_filter_exception"
@@ -69,8 +69,14 @@ class LogStash::Filters::Script < LogStash::Filters::Base
 
     event.cancel unless returned_original
   end 
-  
-  def flush()
-    @script.flush()
+
+  def flush(options)
+    # We hijack the final flush to act as close
+    # This lets us pass on final events to through the pipeline
+    if options[:final]
+      @script.close
+    else
+      @script.flush
+    end
   end
 end

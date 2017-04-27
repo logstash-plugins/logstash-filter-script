@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'logstash-filter-script'
-  s.version       = '0.1.0'
+  s.version       = '1.0.0'
   s.licenses      = ['Apache License (2.0)']
   s.summary       = 'Filter logstash events based on a custom script'
   s.description   = 'Filter logstash events based on a custom script, fully testable unlike the ruby filter.'

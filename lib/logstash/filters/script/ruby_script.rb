@@ -37,8 +37,12 @@ class LogStash::Filters::Script::RubyScript
     @context.execute_filter(event)
   end
   
-  def flush()
+  def flush
     @context.execute_flush()
+  end
+
+  def close
+    @context.execute_close()
   end
   
   def test

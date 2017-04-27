@@ -31,6 +31,7 @@ class LogStash::Filters::Script::RubyScript::Context
     execution_context.define_singleton_method(:register) {|&block| this.register(&block) }
     execution_context.define_singleton_method(:filter) {|&block| this.filter(&block) }
     execution_context.define_singleton_method(:flush) {|&block| this.flush(&block) }
+    execution_context.define_singleton_method(:close) {|&block| this.close(&block) }
     # If we aren't in test mode we define the test. If we *are* then we don't define anything
     # since our tests are already defined 
     if test_mode
@@ -104,13 +105,25 @@ class LogStash::Filters::Script::RubyScript::Context
   def flush(&block)
     @flush_block = block
   end
+
+  def close(&block)
+    @close_block = block
+  end
   
-  def execute_flush()
+  def execute_flush
+    return if !@flush_block
+
     if @concurrency == :shared
-      @script_lock.synchronize { @flush_block ? @flush_block.call() : [] }
+      @script_lock.synchronize { @execution_context.instance_exec(&flush_block) }
     else
-      @flush_block ? @flush_block.call() : []
+      @flush_block.call()
     end
+  end
+
+  def execute_close
+    return if !@close_block
+
+    @execution_context.instance_exec(&@close_block)
   end
   
   def execute_tests
