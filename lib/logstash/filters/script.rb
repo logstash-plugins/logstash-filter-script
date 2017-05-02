@@ -74,13 +74,15 @@ class LogStash::Filters::Script < LogStash::Filters::Base
     # We hijack the final flush to act as close
     # This lets us pass on final events to through the pipeline
     if options[:final]
-      @script.close
+      @script.flush(true)
     else
-      @script.flush
+      @script.flush(false)
     end
   end
 
+  # Only enable periodic flushing
+  # if the script has defined a flush method
   def periodic_flush
-    true
+    @script.flush_method
   end
 end

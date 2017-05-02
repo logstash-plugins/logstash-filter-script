@@ -5,15 +5,13 @@ class LogStash::Filters::Script::RubyScript::Context
 
   include ::LogStash::Util::Loggable
  
-  attr_reader :setup_block, 
-              :flush_block,
-              :ruby_script,
+  attr_reader :ruby_script,
               :execution_context
   
-  def initialize(ruby_script, script_path, parameters, dlq_writer)
+  def initialize(ruby_script, script_path, options, dlq_writer)
     @ruby_script = ruby_script
     @script_path = script_path
-    @parameters = parameters
+    @options = options
     @test_contexts = []
     @script_lock = Mutex.new
     @concurrency = :single
@@ -27,8 +25,6 @@ class LogStash::Filters::Script::RubyScript::Context
     # Proxy all the methods from this instance needed to be run from the execution context
     this = self # We need to use a clojure to retain access to this object
     execution_context.define_singleton_method(:concurrency) {|type| this.concurrency(type) }
-    execution_context.define_singleton_method(:setup) {|&block| this.setup(&block) }
-    execution_context.define_singleton_method(:flush) {|&block| this.flush(&block) }
     execution_context.define_singleton_method(:close) {|&block| this.close(&block) }
     # If we aren't in test mode we define the test. If we *are* then we don't define anything
     # since our tests are already defined 
@@ -72,13 +68,9 @@ class LogStash::Filters::Script::RubyScript::Context
     @execution_context.api_version
   end
   
-  def setup(&block)
-    @setup_block = block
-  end
-
   def execute_setup()
-    if @setup_block
-      @execution_context.instance_exec(@parameters, &@setup_block)
+    if setup_defined?
+      @execution_context.setup(@options)
     end
   end
   
@@ -86,8 +78,20 @@ class LogStash::Filters::Script::RubyScript::Context
     @concurrency = type
   end
 
-  def on_event_method
-    @execution_context.method(:on_event)
+  def setup_defined?
+    execution_context_defined?(:setup)
+  end
+
+  def on_event_defined?
+    execution_context_defined?(:on_event)
+  end
+
+  def flush_defined?
+    execution_context_defined?(:flush)
+  end
+
+  def execution_context_defined?(name)
+    @execution_context.methods.include?(name)
   end
   
   def execute_on_event(event)
@@ -102,25 +106,24 @@ class LogStash::Filters::Script::RubyScript::Context
     @execution_context.on_event(event)
   end
   
-  def flush(&block)
-    @flush_block = block
-  end
-
   def close(&block)
     @close_block = block
   end
   
-  def execute_flush
-    return if !@flush_block
+  def execute_flush(final)
+    return [] if !flush_defined?
 
     if @concurrency == :shared
-      #execution_context.instance_exec(&flush_block)
-      @script_lock.synchronize { @execution_context.instance_exec(&flush_block) }
+      @script_lock.synchronize {  execute_flush_unsafe(final) }
     else
-      @script_lock.synchronize { @execution_context.instance_exec(&flush_block) }
+      execute_flush_unsafe(final)
     end
   rescue => e
     @logger.error("Error during flush!", :message => e.message, :class => e.class.name, :backtrace => e.backtrace)
+  end
+
+  def execute_flush_unsafe(final)
+    @execution_context.flush(final)
   end
 
   def execute_close

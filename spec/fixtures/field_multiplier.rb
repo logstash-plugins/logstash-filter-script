@@ -6,7 +6,7 @@ api_version 1
 # Only use this if you know your code is threadsafe!
 concurrency :shared 
 
-setup do |params|
+def setup(params)
   @field = params['field']
   @multiplier = params['multiplier']
 end
@@ -21,7 +21,7 @@ end
 
 # This is just here to show how the flush function works
 # It just creates a meaningless event
-flush do
+def flush(final)
   [::LogStash::Event.new("multiply_flush" => true)]
 end
 

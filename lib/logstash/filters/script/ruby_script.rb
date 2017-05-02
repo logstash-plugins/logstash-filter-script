@@ -9,10 +9,10 @@ class LogStash::Filters::Script::RubyScript
   
   attr_reader :script, :script_path, :dlq_writer
   
-  def initialize(script, script_path, parameters, dlq_writer)
+  def initialize(script, script_path, options, dlq_writer)
     @script = script
     @script_path = script_path
-    @context = Context.new(self, script_path, parameters, @dlq_writer)
+    @context = Context.new(self, script_path, options, @dlq_writer)
   end
   
   def setup
@@ -25,10 +25,11 @@ class LogStash::Filters::Script::RubyScript
     begin
       @context.execute_setup
     rescue => e
+      require 'pry' ;binding.pry
       raise ::LogStash::Filters::Script::ScriptError.new(script_path, e), "Error during setup"
     end
     
-    if !@context.on_event_method
+    if !@context.on_event_defined?
       raise "Script does not define `on_event`! Please ensure that you have defined the `on_event` method!"
     end
   end
@@ -37,8 +38,8 @@ class LogStash::Filters::Script::RubyScript
     @context.execute_on_event(event)
   end
   
-  def flush
-    @context.execute_flush()
+  def flush(final)
+    @context.execute_flush(final)
   end
 
   def close

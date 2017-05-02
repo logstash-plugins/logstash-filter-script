@@ -1,8 +1,5 @@
 api_version 1
 
-setup do |params|
-end
-
 def on_event(event)
   event.set('foo', 'bar')
   [event]

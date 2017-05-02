@@ -4,7 +4,7 @@
 
 api_version 1
 
-setup do |params|
+def setup(params)
   @transactions = Hash.new do |h,k| 
     h[k] = {
       :id => k, 
@@ -39,12 +39,14 @@ def on_event(event)
   end
 end
 
-flush do
+def flush(final)
   cutoff = Time.now - @flush_idle_after
   
   flushed_events = []
   @transactions.each do |id, transaction|
-    if transaction[:last_updated] < cutoff
+    # On final flush flush everything
+    # Otherwise, wait till the cutoff has been passed
+    if final || transaction[:last_updated] < cutoff
       flushed_events << finalize_transaction(transaction)
     end
   end
