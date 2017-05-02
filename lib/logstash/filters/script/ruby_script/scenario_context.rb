@@ -3,6 +3,7 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
   require "logstash/filters/script/ruby_script/expect_context"
   require "logstash/filters/script/ruby_script/scenario/base_assert_context"
   require "logstash/filters/script/ruby_script/scenario/assert_setup_context"
+  require "logstash/filters/script/ruby_script/scenario/assert_on_event_context"
   attr_reader :name, :script_context, :execution_context
   
   def initialize(script_context, name)
@@ -97,7 +98,7 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
     @setup_contexts << AssertSetupContext.new(self, name, block)
   end
 
-  def assert_on_even(name, &block)
+  def assert_on_event(name, &block)
     @on_event_contexts << AssertOnEventContext.new(self, name, block)
   end
   

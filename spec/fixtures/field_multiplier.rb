@@ -41,11 +41,11 @@ scenario "standard flow" do
   end
 
   
-  expect("there to be only one result event") do |events| 
+  assert_on_event("there to be only one result event") do |events| 
     events.size == 1
   end
   
-  expect("result to be equal to 123*3(369)") do |events| 
+  assert_on_event("result to be equal to 123*3(369)") do |events| 
     events.first.get("myfield") == 369
   end
 end

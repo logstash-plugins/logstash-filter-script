@@ -1,6 +1,6 @@
-class LogStash::Filters::Script::RubyScript::ScenarioContext::AssertSetupContext < LogStash::Filters::Script::RubyScript::ScenarioContext::BaseAssertContext
+class LogStash::Filters::Script::RubyScript::ScenarioContext::AssertOnEventContext < LogStash::Filters::Script::RubyScript::ScenarioContext::BaseAssertContext
   def context_name
-    "assert_on_block"
+    "assert_on_event"
   end
 
   def execute_block(result_events)

@@ -86,15 +86,15 @@ scenario "aggregating a transaction" do
     ]
   end
   
-  expect("There to be one out event") do |events| 
+  assert_on_event("There to be one out event") do |events| 
     events.size == 1
   end
   
-  expect("Single out event to have 2 parts") do |events| 
+  assert_on_event("Single out event to have 2 parts") do |events| 
     events.first.get("parts").size == 2
   end
   
-  expect("The parts to be in order") do |events|
+  assert_on_event("The parts to be in order") do |events|
     parts = events.first.get("parts")
     parts[0]["message"] == "Uno"
     parts[1]["message"] == "Dos"

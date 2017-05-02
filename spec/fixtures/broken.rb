@@ -9,7 +9,7 @@ scenario "setting the field" do
   test_event { Event.new("myfield" => 123) }
   
   # This should fail!
-  expect("foo to equal baz") do |events| 
+  assert_on_event("foo to equal baz") do |events| 
     events.first.get('foo') == 'baz'
   end
 end
