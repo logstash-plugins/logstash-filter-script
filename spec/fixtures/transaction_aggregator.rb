@@ -72,7 +72,7 @@ def finalize_transaction(transaction)
 end
 
 scenario "aggregating a transaction" do
-  parameters do 
+  test_options do 
     # We make everything expired so that in tests the flush affects everything
     # That wasn't handled by the filter function
     { "flush_idle_after" => -1 }

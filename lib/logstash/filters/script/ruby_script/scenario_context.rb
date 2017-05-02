@@ -1,26 +1,27 @@
 # Handle top level test blocks
 class LogStash::Filters::Script::RubyScript::ScenarioContext
   require "logstash/filters/script/ruby_script/expect_context"
+  require "logstash/filters/script/ruby_script/scenario/assert_setup_context"
   attr_reader :name, :script_context
   
   def initialize(script_context, name)
     @name = name
     @script_context = script_context
     @expect_contexts = []
-    @parameters = {}
+    @test_options = {}
     @execution_context = script_context.make_execution_context("Test/#{name}", true)
   end
     
-  def parameters(&block)
+  def test_options(&block)
     # Can act as a reader if no block passed
-    return @parameters unless block
+    return @test_options unless block
 
-    @parameters = block.call
-    if !@parameters.is_a?(Hash)
-      raise ArgumentError, "Test parameters must be a hash in #{@name}!"
+    @test_options = block.call
+    if !@test_options.is_a?(Hash)
+      raise ArgumentError, "Test test_options must be a hash in #{@name}!"
     end
     
-    @execution_context.setup(@parameters)
+    @execution_context.setup(@test_options)
   end
   
   def in_event(&block)

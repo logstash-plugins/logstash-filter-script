@@ -26,7 +26,7 @@ def flush(final)
 end
 
 scenario "standard flow" do
-  parameters do 
+  test_options do 
     { "field" => "myfield", "multiplier" => 3 }
   end
   

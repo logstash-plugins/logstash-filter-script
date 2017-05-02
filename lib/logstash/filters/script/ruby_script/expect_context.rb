@@ -24,7 +24,7 @@ class ExpectContext
       # The bubbled exception truncates long messages unfortunately, so we can't
       # just include that map there
       logger.error(message, 
-        :parameters => @scenario_context.parameters,
+        :test_options => @scenario_context.test_options,
         :in_events => @scenario_context.in_events.map(&:to_hash_with_metadata),
         :results => events.map(&:to_hash_with_metadata)
       )
