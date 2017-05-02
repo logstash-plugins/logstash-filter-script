@@ -1,5 +1,5 @@
 # Handle top level test blocks
-class LogStash::Filters::Script::RubyScript::TestContext
+class LogStash::Filters::Script::RubyScript::ScenarioContext
   require "logstash/filters/script/ruby_script/expect_context"
   attr_reader :name, :script_context
   

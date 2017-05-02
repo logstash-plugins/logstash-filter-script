@@ -25,7 +25,7 @@ def flush(final)
   [::LogStash::Event.new("multiply_flush" => true)]
 end
 
-test "standard flow" do
+scenario "standard flow" do
   parameters do 
     { "field" => "myfield", "multiplier" => 3 }
   end

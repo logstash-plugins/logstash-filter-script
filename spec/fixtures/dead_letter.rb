@@ -9,7 +9,7 @@ def on_event(event)
   end
 end
 
-test "foo=>bar" do
+scenario "foo=>bar" do
   in_event { {"foo" => "bar"} }
 
   expect("The event to not continue") do |events|
@@ -17,7 +17,7 @@ test "foo=>bar" do
   end
 end
 
-test "foo=>baz" do
+scenario "foo=>baz" do
   in_event { {"foo" => "baz"} }
 
   expect("The event to not continue") do |events|

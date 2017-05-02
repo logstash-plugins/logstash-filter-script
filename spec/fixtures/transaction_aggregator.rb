@@ -71,7 +71,7 @@ def finalize_transaction(transaction)
   result
 end
 
-test "aggregating a transaction" do
+scenario "aggregating a transaction" do
   parameters do 
     # We make everything expired so that in tests the flush affects everything
     # That wasn't handled by the filter function

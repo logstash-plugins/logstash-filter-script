@@ -1,7 +1,7 @@
 class LogStash::Filters::Script::RubyScript::Context
   require "logstash/filters/script/ruby_script/version_check_context"
   require "logstash/filters/script/ruby_script/execution_context"
-  require "logstash/filters/script/ruby_script/test_context"
+  require "logstash/filters/script/ruby_script/scenario_context"
 
   include ::LogStash::Util::Loggable
  
@@ -12,7 +12,7 @@ class LogStash::Filters::Script::RubyScript::Context
     @ruby_script = ruby_script
     @script_path = script_path
     @options = options
-    @test_contexts = []
+    @scenario_contexts = []
     @script_lock = Mutex.new
     @concurrency = :single
     @dlq_writer = dlq_writer
@@ -25,13 +25,12 @@ class LogStash::Filters::Script::RubyScript::Context
     # Proxy all the methods from this instance needed to be run from the execution context
     this = self # We need to use a clojure to retain access to this object
     execution_context.define_singleton_method(:concurrency) {|type| this.concurrency(type) }
-    execution_context.define_singleton_method(:close) {|&block| this.close(&block) }
     # If we aren't in test mode we define the test. If we *are* then we don't define anything
     # since our tests are already defined 
     if test_mode
-      execution_context.define_singleton_method(:test) {|name,&block| nil }
+      execution_context.define_singleton_method(:scenario) {|name,&block| nil }
     else
-      execution_context.define_singleton_method(:test) {|name,&block| this.test(name, &block) }
+      execution_context.define_singleton_method(:scenario) {|name,&block| this.test(name, &block) }
     end
 
     execution_context.instance_eval(@ruby_script.script, @script_path, 1)
@@ -68,12 +67,6 @@ class LogStash::Filters::Script::RubyScript::Context
     @execution_context.api_version
   end
   
-  def execute_setup()
-    if setup_defined?
-      @execution_context.setup(@options)
-    end
-  end
-  
   def concurrency(type)
     @concurrency = type
   end
@@ -90,6 +83,10 @@ class LogStash::Filters::Script::RubyScript::Context
     execution_context_defined?(:flush)
   end
 
+  def close_defined?
+    execution_context_defined(:close)
+  end
+
   def execution_context_defined?(name)
     @execution_context.methods.include?(name)
   end
@@ -102,12 +99,20 @@ class LogStash::Filters::Script::RubyScript::Context
     end
   end
 
+  def execute_setup()
+    if setup_defined?
+      @execution_context.setup(@options)
+    end
+  end
+
   def execute_on_event_unsafe(event)
     @execution_context.on_event(event)
   end
   
-  def close(&block)
-    @close_block = block
+  def execute_close
+    if close_defined?
+      @execution_context.close()
+    end
   end
   
   def execute_flush(final)
@@ -133,7 +138,7 @@ class LogStash::Filters::Script::RubyScript::Context
   end
   
   def execute_tests
-    @test_contexts.
+    @scenario_contexts.
       map(&:execute).
       reduce({:passed => 0, :failed => 0}) do |acc,res|
         acc[:passed] += res[:passed]
@@ -143,8 +148,8 @@ class LogStash::Filters::Script::RubyScript::Context
   end
   
   def test(name, &block)
-    test_context = LogStash::Filters::Script::RubyScript::TestContext.new(self, name)
-    test_context.instance_eval(&block)
-    @test_contexts << test_context
+    scenario_context = LogStash::Filters::Script::RubyScript::ScenarioContext.new(self, name)
+    scenario_context.instance_eval(&block)
+    @scenario_contexts << scenario_context
   end
 end

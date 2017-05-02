@@ -5,7 +5,7 @@ def on_event(event)
   [event]
 end
 
-test "setting the field" do
+scenario "setting the field" do
   in_event { { "myfield" => 123 } }
   
   # This should fail!
