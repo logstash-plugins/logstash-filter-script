@@ -10,6 +10,7 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
     @script_context = script_context
 
     @setup_contexts = []
+    @on_event_contexts = []
 
     @expect_contexts = []
     @test_options = {}
@@ -45,9 +46,19 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
 
   def execute_setup_assertions!
     @setup_contexts.each do |sc|
-      key = sc.execute == true ? :passed : :failed
-      @results[key] += 1
+      record_assert_result(sc.execute)
     end
+  end
+
+  def execute_on_event_assertions!(on_event_results)
+    @on_event_contexts.each do |oec|
+      record_assert_result(oec.execute(on_event_results))
+    end
+  end
+
+  def record_assert_result(res)
+    key = res == true ? :passed : :failed
+    @results[key] += 1
   end
 
   def execute
@@ -57,19 +68,21 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
 
     execute_setup_assertions!
     
-    results = []
+    on_event_results = []
     @test_events.each do |e|
       single_result = @execution_context.on_event(e)
       ::LogStash::Filters::Script.check_result_events!(single_result)
-      results += single_result
+      on_event_results += single_result
     end
+
+    execute_on_event_assertions!(on_event_results)
     
     flush_results = @script_context.flush_defined? ? 
       @execution_context.flush(false) :
       []
     
     @expect_contexts.each do |ec| 
-      res = ec.execute(results, flush_results) 
+      res = ec.execute(on_event_results, flush_results) 
       if res != true && res != false
         raise "Expect context #{ec} returned a non true/false value: #{res.inspect}!"
       end
@@ -82,6 +95,10 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
 
   def assert_setup(name, &block)
     @setup_contexts << AssertSetupContext.new(self, name, block)
+  end
+
+  def assert_on_even(name, &block)
+    @on_event_contexts << AssertOnEventContext.new(self, name, block)
   end
   
   def expect(name, &block)
