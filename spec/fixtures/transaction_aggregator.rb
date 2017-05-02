@@ -100,7 +100,7 @@ scenario "aggregating a transaction" do
     parts[1]["message"] == "Dos"
   end
   
-  expect("To return the incomplete, but expired, message") do |events,flushed_events|
-    flushed_events.first.get("parts").first["message"]
+  assert_on_flush("To return the incomplete, but expired, message") do |flushed_events|
+    flushed_events.first.get("parts").first["message"] == "Ein"
   end
 end

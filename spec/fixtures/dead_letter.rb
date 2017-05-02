@@ -12,7 +12,7 @@ end
 scenario "foo=>bar" do
   test_event { Event.new("foo" => "bar") }
 
-  expect("The event to not continue") do |events|
+  assert_on_event("The event to not continue") do |events|
     events.size == 0
   end
 end

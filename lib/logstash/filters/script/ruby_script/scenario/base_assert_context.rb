@@ -28,7 +28,7 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext::BaseAssertContext
     block_result = execute_block(*block_extras)
 
     if block_result != true && block_result != false
-      raise LogStash::Filters::Script::ScriptError.new(script_path), "Test #{self.to_s} returned a non-boolean value!"
+      raise LogStash::Filters::Script::ScriptError.new(script_path), "Test #{self.to_s} returned a non-boolean value of `#{block_result.inspect}`!"
     end
 
     if block_result
