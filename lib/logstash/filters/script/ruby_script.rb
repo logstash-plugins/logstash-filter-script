@@ -15,7 +15,7 @@ class LogStash::Filters::Script::RubyScript
     @context = Context.new(self, script_path, parameters, @dlq_writer)
   end
   
-  def register
+  def setup
     begin
       @context.load_script
     rescue => e
@@ -23,18 +23,18 @@ class LogStash::Filters::Script::RubyScript
     end
     
     begin
-      @context.execute_register
+      @context.execute_setup
     rescue => e
-      raise ::LogStash::Filters::Script::ScriptError.new(script_path, e), "Error during register"
+      raise ::LogStash::Filters::Script::ScriptError.new(script_path, e), "Error during setup"
     end
     
-    if !@context.filter_block.is_a?(Proc)
-      raise "Script does not define a filter! Please ensure that you have defined a filter block!"
+    if !@context.on_event_method
+      raise "Script does not define `on_event`! Please ensure that you have defined the `on_event` method!"
     end
   end
   
   def execute(event)
-    @context.execute_filter(event)
+    @context.execute_on_event(event)
   end
   
   def flush

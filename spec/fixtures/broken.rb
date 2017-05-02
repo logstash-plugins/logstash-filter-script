@@ -1,9 +1,9 @@
 api_version 1
 
-register do |params|
+setup do |params|
 end
 
-filter do |event|
+def on_event(event)
   event.set('foo', 'bar')
   [event]
 end

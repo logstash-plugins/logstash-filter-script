@@ -6,8 +6,8 @@ describe LogStash::Filters::Script do
   let(:fixtures_path) { File.join(File.dirname(__FILE__), '../fixtures/') }
   let(:script_filename) { 'field_multiplier.rb' }
   let(:script_path) { File.join(fixtures_path, script_filename)}
-  let(:script_params) { { 'field' => 'foo', 'multiplier' => 2 } }
-  let(:filter_params) { { 'file' => script_path, 'script_params' => script_params} }
+  let(:options) { { 'field' => 'foo', 'multiplier' => 2 } }
+  let(:filter_params) { { 'file' => script_path, 'options' => options} }
   let(:incoming_event) { ::LogStash::Event.new('foo' => 42) }
   
   subject(:filter) { ::LogStash::Filters::Script.new(filter_params) }

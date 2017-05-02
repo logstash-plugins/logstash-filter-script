@@ -1,5 +1,5 @@
 api_version 0
 
-filter do |event|
+def on_event(event)
   [event]
 end

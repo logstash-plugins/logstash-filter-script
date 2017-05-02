@@ -5,8 +5,7 @@ class LogStash::Filters::Script::RubyScript::Context
 
   include ::LogStash::Util::Loggable
  
-  attr_reader :register_block, 
-              :filter_block, 
+  attr_reader :setup_block, 
               :flush_block,
               :ruby_script,
               :execution_context
@@ -28,8 +27,7 @@ class LogStash::Filters::Script::RubyScript::Context
     # Proxy all the methods from this instance needed to be run from the execution context
     this = self # We need to use a clojure to retain access to this object
     execution_context.define_singleton_method(:concurrency) {|type| this.concurrency(type) }
-    execution_context.define_singleton_method(:register) {|&block| this.register(&block) }
-    execution_context.define_singleton_method(:filter) {|&block| this.filter(&block) }
+    execution_context.define_singleton_method(:setup) {|&block| this.setup(&block) }
     execution_context.define_singleton_method(:flush) {|&block| this.flush(&block) }
     execution_context.define_singleton_method(:close) {|&block| this.close(&block) }
     # If we aren't in test mode we define the test. If we *are* then we don't define anything
@@ -39,11 +37,10 @@ class LogStash::Filters::Script::RubyScript::Context
     else
       execution_context.define_singleton_method(:test) {|name,&block| this.test(name, &block) }
     end
+
+    execution_context.instance_eval(@ruby_script.script, @script_path, 1)
+
     execution_context
-  end
-  
-  def load_execution_context(ec)
-    ec.instance_eval(@ruby_script.script, @script_path, 1)
   end
 
   def check_api_version!
@@ -69,37 +66,40 @@ class LogStash::Filters::Script::RubyScript::Context
   
   def load_script
     @execution_context = self.make_execution_context(:main, false)
-    load_execution_context(@execution_context)
   end
 
   def api_version
     @execution_context.api_version
   end
   
-  def register(&block)
-    @register_block = block
+  def setup(&block)
+    @setup_block = block
   end
 
-  def execute_register()
-    if @register_block
-      @execution_context.instance_exec(@parameters, &@register_block)
+  def execute_setup()
+    if @setup_block
+      @execution_context.instance_exec(@parameters, &@setup_block)
     end
   end
   
   def concurrency(type)
     @concurrency = type
   end
-  
-  def filter(&block)
-    @filter_block = block
+
+  def on_event_method
+    @execution_context.method(:on_event)
   end
   
-  def execute_filter(event)
+  def execute_on_event(event)
     if @concurrency == :shared
-      @script_lock.synchronize { @execution_context.instance_exec(event, &@filter_block) }
+      @script_lock.synchronize { self.execute_on_event_unsafe(event) }
     else 
-      @execution_context.instance_exec(event, &@filter_block)
+      self.execute_on_event_unsafe(event)
     end
+  end
+
+  def execute_on_event_unsafe(event)
+    @execution_context.on_event(event)
   end
   
   def flush(&block)

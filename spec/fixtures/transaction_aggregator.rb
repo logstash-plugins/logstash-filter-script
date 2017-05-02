@@ -4,7 +4,7 @@
 
 api_version 1
 
-register do |params|
+setup do |params|
   @transactions = Hash.new do |h,k| 
     h[k] = {
       :id => k, 
@@ -16,10 +16,10 @@ register do |params|
   @flush_idle_after = params["flush_idle_after"] || 300 # Seconds
 end
 
-filter do |event|
+def on_event(event)
   transaction_id = event.get("transaction_id")
   
-  next [event] unless transaction_id
+  return [event] unless transaction_id
   
   transaction = @transactions[transaction_id]
   transaction[:parts] << event
@@ -31,9 +31,11 @@ filter do |event|
   
   if transaction[:total_parts] && transaction[:parts].size == transaction[:total_parts]
     event = finalize_transaction(transaction)
-    next [event]
+    # Implicit return
+    [event]
   else
-    next []
+    # Implicit return
+    []
   end
 end
 

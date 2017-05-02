@@ -1,6 +1,6 @@
 api_version 1
 
-filter do |event|
+def on_event(event)
   if event.get("foo") == "bar"
     dead_letter(event, "Foo == bar!")
     []

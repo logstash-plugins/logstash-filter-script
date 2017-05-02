@@ -6,12 +6,12 @@ api_version 1
 # Only use this if you know your code is threadsafe!
 concurrency :shared 
 
-register do |params|
+setup do |params|
   @field = params['field']
   @multiplier = params['multiplier']
 end
 
-filter do |event|
+def on_event(event)
   event.set(@field, event.get(@field) * @multiplier)
   # Filter blocks must return any events that are to be passed on
   # return a nil or [] here if all events are to be cancelled

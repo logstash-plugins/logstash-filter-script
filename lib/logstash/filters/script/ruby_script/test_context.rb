@@ -9,7 +9,6 @@ class LogStash::Filters::Script::RubyScript::TestContext
     @expect_contexts = []
     @parameters = {}
     @execution_context = script_context.make_execution_context("Test/#{name}", true)
-    @script_context.load_execution_context(@execution_context)
   end
     
   def parameters(&block)
@@ -21,7 +20,7 @@ class LogStash::Filters::Script::RubyScript::TestContext
       raise ArgumentError, "Test parameters must be a hash in #{@name}!"
     end
     
-    @execution_context.instance_exec(@parameters, &@script_context.register_block)
+    @execution_context.instance_exec(@parameters, &@script_context.setup_block)
   end
   
   def in_event(&block)
@@ -46,7 +45,7 @@ class LogStash::Filters::Script::RubyScript::TestContext
     
     results = []
     @in_events.each do |e|
-      single_result = @execution_context.instance_exec(e, &@script_context.filter_block)
+      single_result = @execution_context.on_event(e)
       ::LogStash::Filters::Script.check_result_events!(single_result)
       results += single_result
     end

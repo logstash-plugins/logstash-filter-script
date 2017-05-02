@@ -13,15 +13,15 @@ class LogStash::Filters::Script < LogStash::Filters::Base
   config :file, :validate => :path, :required => true
   
   # Parameters for this specific script
-  config :script_params, :type => :hash, :default => {}
+  config :options, :type => :hash, :default => {}
 
   # Tag to add to events that cause an exception in the script filter
   config :tag_on_exception, :type => :string, :default => "_script_filter_exception"
   
   def register
     @file_contents = File.read file
-    @script = RubyScript.new(@file_contents, @file, script_params, @dlq_writer)
-    @script.register
+    @script = RubyScript.new(@file_contents, @file, options, @dlq_writer)
+    @script.setup
     @script.test
     @dlq_writer = respond_to?(:execution_context) ? execution_context.dlq_writer : nil
   rescue ::LogStash::Filters::Script::ScriptError => e
