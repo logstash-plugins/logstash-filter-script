@@ -35,7 +35,7 @@ describe LogStash::Filters::Script do
         filter.register 
       end
       
-      subject { filter.flush }
+      subject { filter.flush({}) }
       
       it "should return the flush result" do
         expect(subject.first.get("multiply_flush")).to eq(true)
