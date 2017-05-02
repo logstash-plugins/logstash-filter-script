@@ -55,7 +55,7 @@ def flush(final)
 end
 
 def finalize_transaction(transaction)
-  result = ::LogStash::Event.new
+  result = Event.new
   
   transaction_parts = @transactions[transaction[:id]][:parts]
   
@@ -78,11 +78,11 @@ scenario "aggregating a transaction" do
     { "flush_idle_after" => -1 }
   end
   
-  in_events do 
+  test_events do 
     [
-      { "transaction_id" => 123, "transaction_total_parts" => 2, "message" => "Uno" },
-      { "transaction_id" => 123, "message" => "Dos" },
-      { "transaction_id" => 456, "transaction_total_parts" => 2, "message" => "Ein" }
+      Event.new("transaction_id" => 123, "transaction_total_parts" => 2, "message" => "Uno"),
+      Event.new("transaction_id" => 123, "message" => "Dos"),
+      Event.new("transaction_id" => 456, "transaction_total_parts" => 2, "message" => "Ein")
     ]
   end
   

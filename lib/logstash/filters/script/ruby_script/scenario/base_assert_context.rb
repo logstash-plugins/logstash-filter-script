@@ -1,5 +1,4 @@
-# Handle expect blocks inside of test blocks
-class ExpectContext
+class LogStash::Filters::Script::RubyScript::ScenarioContext::BaseAssertContext
   include ::LogStash::Util::Loggable
   
   attr_reader :name
@@ -11,11 +10,21 @@ class ExpectContext
   end
   
   def to_s 
-    "<Scenario #{@scenario_context.name}/#{self.name}>"
+    "[scenario(#{@scenario_context.name}).#{context_name}(#{self.name})]"
+  end
+
+  def context_name
+    "assert_setup"
+  end
+
+  def execution_context
+    @scenario_context.execution_context
   end
   
-  def execute(events, flushed)
-    if @block.call(events, flushed)
+  # Run the assertion. Takes a hash of extra data to
+  # be logged in the event of an error
+  def execute(error_extras={})
+    if execute_block
       true
     else
       script_path = @scenario_context.script_context.ruby_script.script_path
@@ -23,11 +32,12 @@ class ExpectContext
       # This actually can output some useful data about the events that failed
       # The bubbled exception truncates long messages unfortunately, so we can't
       # just include that map there
-      logger.error(message, 
+      logger_hash = {
         :test_options => @scenario_context.test_options,
-        :test_events => @scenario_context.test_events.map(&:to_hash_with_metadata),
-        :results => events.map(&:to_hash_with_metadata)
-      )
+        :test_events => @scenario_context.test_events.map(&:to_hash_with_metadata)
+      }.merge(error_extras)
+
+      logger.error(message, logger_hash)
       false
     end
   end

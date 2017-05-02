@@ -1,4 +1,4 @@
-class LogStash::Filters::Script::RubyScript::ScenarioContext::AssertSetupContext
+class LogStash::Filters::Script::RubyScript::ScenarioContext::AssertSetupContext < LogStash::Filters::Script::RubyScript::ScenarioContext::BaseAssertContext
   include ::LogStash::Util::Loggable
   
   attr_reader :name
@@ -16,22 +16,12 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext::AssertSetupContext
   def context_name
     "assert_setup"
   end
-  
-  def execute(execution_context)
-    if execution_context.instance_exec(&@block)
-      true
-    else
-      script_path = @test_context.script_context.ruby_script.script_path
-      message = "***TEST FAILURE FOR: '#{@test_context.name}' expected '#{@name}'***"
-      # This actually can output some useful data about the events that failed
-      # The bubbled exception truncates long messages unfortunately, so we can't
-      # just include that map there
-      logger.error(message, 
-        :test_options => @test_context.test_options,
-        :in_events => @test_context.in_events.map(&:to_hash_with_metadata),
-        :results => events.map(&:to_hash_with_metadata)
-      )
-      false
-    end
+
+  def execution_context
+    @scenario_context.execution_context
   end
+
+  def execute_block
+    execution_context.instance_exec(&@block)
+  end 
 end

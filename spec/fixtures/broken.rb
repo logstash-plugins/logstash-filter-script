@@ -6,7 +6,7 @@ def on_event(event)
 end
 
 scenario "setting the field" do
-  in_event { { "myfield" => 123 } }
+  test_event { Event.new("myfield" => 123) }
   
   # This should fail!
   expect("foo to equal baz") do |events| 

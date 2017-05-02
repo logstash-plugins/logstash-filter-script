@@ -22,7 +22,7 @@ end
 # This is just here to show how the flush function works
 # It just creates a meaningless event
 def flush(final)
-  [::LogStash::Event.new("multiply_flush" => true)]
+  [Event.new("multiply_flush" => true)]
 end
 
 scenario "standard flow" do
@@ -30,7 +30,16 @@ scenario "standard flow" do
     { "field" => "myfield", "multiplier" => 3 }
   end
   
-  in_event { { "myfield" => 123 } }
+  test_event { Event.new("myfield" => 123) }
+
+  assert_setup("field property is set") do
+    @field == "myfield"
+  end
+
+  assert_setup("multiplier property is set") do
+    @multiplier == 3
+  end
+
   
   expect("there to be only one result event") do |events| 
     events.size == 1

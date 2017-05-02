@@ -17,12 +17,14 @@ class LogStash::Filters::Script < LogStash::Filters::Base
 
   # Tag to add to events that cause an exception in the script filter
   config :tag_on_exception, :type => :string, :default => "_script_filter_exception"
+
+  config :skip_tests, :type => :boolean, :defauls => false
   
   def register
     @file_contents = File.read file
     @script = RubyScript.new(@file_contents, @file, options, @dlq_writer)
     @script.setup
-    @script.test
+    @script.test unless @skip_tests
     @dlq_writer = respond_to?(:execution_context) ? execution_context.dlq_writer : nil
   rescue ::LogStash::Filters::Script::ScriptError => e
     raise e

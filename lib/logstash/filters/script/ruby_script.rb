@@ -19,6 +19,7 @@ class LogStash::Filters::Script::RubyScript
     begin
       @context.load_script
     rescue => e
+      require 'pry'; binding.pry
       raise ::LogStash::Filters::Script::ScriptError.new(script_path, e), "Error during load"
     end
     

@@ -13,6 +13,10 @@ describe LogStash::Filters::Script do
   subject(:filter) { ::LogStash::Filters::Script.new(filter_params) }
   
   describe "basics" do
+    # We don't want test failures within the example to cause these tests
+    # to fail. We test the suite elsewhere
+    let(:filter_params) { super.merge("skip_tests" => true) }
+
     it "should register cleanly" do
       expect do
         filter.register
@@ -54,6 +58,16 @@ describe LogStash::Filters::Script do
       expect do 
         filter.register
       end.to raise_error(LogStash::Filters::Script::ScriptError)
+    end
+  end
+
+  describe "field_multiplier.rb" do
+    let(:script_filename) { 'field_multiplier.rb' }
+    
+      it "should not error out during register" do
+      expect do 
+        filter.register
+      end.not_to raise_error
     end
   end
   

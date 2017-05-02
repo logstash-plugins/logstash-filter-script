@@ -1,15 +1,20 @@
 # Handle top level test blocks
 class LogStash::Filters::Script::RubyScript::ScenarioContext
   require "logstash/filters/script/ruby_script/expect_context"
+  require "logstash/filters/script/ruby_script/scenario/base_assert_context"
   require "logstash/filters/script/ruby_script/scenario/assert_setup_context"
-  attr_reader :name, :script_context
+  attr_reader :name, :script_context, :execution_context
   
   def initialize(script_context, name)
     @name = name
     @script_context = script_context
+
+    @setup_contexts = []
+
     @expect_contexts = []
     @test_options = {}
     @execution_context = script_context.make_execution_context("Test/#{name}", true)
+    @results = {:passed => 0, :failed => 0}
   end
     
   def test_options(&block)
@@ -24,28 +29,36 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
     @execution_context.setup(@test_options)
   end
   
-  def in_event(&block)
-    return @in_events unless block
+  def test_event(&block)
+    return @test_events unless block
 
     orig = block.call
-    event_hashes = orig.is_a?(Hash) ? [orig] : orig
-    event_hashes.each do |e|
-      if !e.is_a?(Hash)
+    @test_events = orig.is_a?(Array) ? orig : [orig]
+    @test_events.each do |e|
+      if !e.is_a?(::LogStash::Event)
         raise ArgumentError, 
-          "In event for #{self.name} must receive either a hash or an array of hashes! got a '#{e.class}' in #{event_hashes.inspect}"
+          "In event for #{self.name} must receive either an Event or an array of Events! got a '#{e.class}' in #{test_events.inspect}"
       end
     end
-    @in_events = Array(event_hashes).map {|h| ::LogStash::Event.new(h) }
   end
-  alias_method :in_events, :in_event
-  
-  def execute
-    if !@in_events
-      raise "You must declare an `in_event` to run tests!"
+  alias_method :test_events, :test_event
+
+  def execute_setup_assertions!
+    @setup_contexts.each do |sc|
+      key = sc.execute == true ? :passed : :failed
+      @results[key] += 1
     end
+  end
+
+  def execute
+    if !@test_events
+      raise "You must declare a `test_event` to run tests!"
+    end
+
+    execute_setup_assertions!
     
     results = []
-    @in_events.each do |e|
+    @test_events.each do |e|
       single_result = @execution_context.on_event(e)
       ::LogStash::Filters::Script.check_result_events!(single_result)
       results += single_result
@@ -55,17 +68,20 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
       @execution_context.flush(false) :
       []
     
-    @expect_contexts.map do |ec| 
+    @expect_contexts.each do |ec| 
       res = ec.execute(results, flush_results) 
       if res != true && res != false
         raise "Expect context #{ec} returned a non true/false value: #{res.inspect}!"
       end
-      res
-    end.reduce({:passed => 0, :failed => 0}) do |acc,res| 
       key = res == true ? :passed : :failed
-      acc[key] += 1
-      acc
+      @results[key] += 1
     end
+
+    @results
+  end
+
+  def assert_setup(name, &block)
+    @setup_contexts << AssertSetupContext.new(self, name, block)
   end
   
   def expect(name, &block)

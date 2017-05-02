@@ -3,6 +3,9 @@
 # to eliminate instance var and method def conflicts against other
 # objects
 class LogStash::Filters::Script::RubyScript::ExecutionContext
+  # Alias `Event` so that users can just type `Event.new` in a script
+  Event = ::LogStash::Event
+
   def initialize(name, logger, dlq_writer)
     # Namespaced with underscore so as not to conflict with anything the user sets
     @__name__ = name
