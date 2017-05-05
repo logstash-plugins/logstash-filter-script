@@ -29,8 +29,6 @@ scenario "standard flow" do
   test_options do 
     { "field" => "myfield", "multiplier" => 3 }
   end
-  
-  test_event { Event.new("myfield" => 123) }
 
   assert_setup("field property is set") do
     @field == "myfield"
@@ -40,12 +38,21 @@ scenario "standard flow" do
     @multiplier == 3
   end
 
-  
-  assert_on_event("there to be only one result event") do |events| 
+  sequence do
+    event(Event.new("myfield" => 123))
+    event(Event.new("myfield" => 123))
+    flush(false)
+    event(Event.new("something" => "else"))
+    flush(true)
+  end
+
+  assert_events("there to be only one result event") do |events| 
     events.size == 1
   end
   
-  assert_on_event("result to be equal to 123*3(369)") do |events| 
+  assert_events("result to be equal to 123*3(369)") do |events| 
     events.first.get("myfield") == 369
   end
+
+  assert_close("...")
 end

@@ -4,6 +4,8 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
   require "logstash/filters/script/ruby_script/scenario/assert_setup_context"
   require "logstash/filters/script/ruby_script/scenario/assert_on_event_context"
   require "logstash/filters/script/ruby_script/scenario/assert_on_flush_context"
+  require "logstash/filters/script/ruby_script/scenario/assert_on_final_flush_context"
+  require "logstash/filters/script/ruby_script/scenario/assert_close_context"
 
   attr_reader :name, :script_context, :execution_context
   
@@ -15,6 +17,8 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
     @setup_contexts = []
     @on_event_contexts = []
     @on_flush_contexts = []
+    @on_final_flush_contexts = []
+    @close_contexts = []
 
     @execution_context = script_context.make_execution_context("Test/#{name}", true)
     @results = {:passed => 0, :failed => 0}
@@ -56,6 +60,14 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
 
   def assert_on_flush(name, &block)
     @on_flush_contexts << AssertOnFlushContext.new(self, name, block)
+  end
+
+  def assert_on_final_flush(name, &block)
+    @on_final_flush_contexts << AssertOnFinalFlushContext.new(self, name, block)
+  end
+
+  def assert_close(name, &block)
+    @close_contexts << AssertCloseContext.new(self, name, block)
   end
 
   def execute
@@ -100,6 +112,22 @@ class LogStash::Filters::Script::RubyScript::ScenarioContext
       record_assert_result(ofc.execute(on_flush_results))
     end
   end
+
+  def execute_on_final_flush_assertions!(on_flush_results)
+    @on_final_flush_contexts.each do |offc|
+      record_assert_result(offc.execute(on_flush_results))
+    end
+  end
+
+  def execute_close_assertions!(on_flush_results)
+    @close_contexts.each do |ofc|
+      record_assert_result(ofc.execute)
+    end
+  end
+
+
+
+
 
   def record_assert_result(res)
     key = res == true ? :passed : :failed

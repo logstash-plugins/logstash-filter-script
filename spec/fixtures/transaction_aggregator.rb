@@ -4,7 +4,7 @@
 
 api_version 1
 
-def setup(params)
+def setup(options)
   @transactions = Hash.new do |h,k| 
     h[k] = {
       :id => k, 
@@ -13,7 +13,7 @@ def setup(params)
       :total_parts => nil
     }
   end
-  @flush_idle_after = params["flush_idle_after"] || 300 # Seconds
+  @flush_idle_after = options["flush_idle_after"] || 300 # Seconds
 end
 
 def on_event(event)
@@ -39,7 +39,7 @@ def on_event(event)
   end
 end
 
-def flush(final)
+def on_flush(final)
   cutoff = Time.now - @flush_idle_after
   
   flushed_events = []
@@ -52,6 +52,9 @@ def flush(final)
   end
   
   flushed_events
+end
+
+def close
 end
 
 def finalize_transaction(transaction)
@@ -75,17 +78,22 @@ scenario "aggregating a transaction" do
   test_options do 
     # We make everything expired so that in tests the flush affects everything
     # That wasn't handled by the filter function
-    { "flush_idle_after" => -1 }
+    { "flush_idle_after" => 300 }
   end
+
+
+
   
-  test_events do 
-    [
-      Event.new("transaction_id" => 123, "transaction_total_parts" => 2, "message" => "Uno"),
-      Event.new("transaction_id" => 123, "message" => "Dos"),
-      Event.new("transaction_id" => 456, "transaction_total_parts" => 2, "message" => "Ein")
-    ]
+  now = Time.now
+  t1m_ago = now - 60
+  t30m_ago = now - (30*60)
+
+  sequence do 
+    event(Event.new("@timestamp" => t1m_ago, "transaction_id" => 123, "transaction_total_parts" => 2, "message" => "Uno"))
+    event(Event.new("@timestamp" => now, "transaction_id" => 456, "transaction_total_parts" => 2, "message" => "Ein"))
+    event(Event.new("@timestamp" => now, "transaction_id" => 123, "message" => "Dos"))
   end
-  
+
   assert_on_event("There to be one out event") do |events| 
     events.size == 1
   end
@@ -99,8 +107,22 @@ scenario "aggregating a transaction" do
     parts[0]["message"] == "Uno"
     parts[1]["message"] == "Dos"
   end
-  
-  assert_on_flush("To return the incomplete, but expired, message") do |flushed_events|
-    flushed_events.first.get("parts").first["message"] == "Ein"
+
+  assert_on_periodic_flush("To return the incomplete, but expired, message") do |flushed_events|
+    next true
+
+    flushed_events.size > 0 && 
+      flushed_events.first.get("parts").first["message"] == "Ein"
+  end
+
+  assert_on_final_flush("To return the incomplete and unexpired message") do
+    flushed_events.size > 0 && 
+      flushed_events.first.get("parts").first["message"] == "Ein"
+  end
+
+  # Kind of superfluous, but still useful in verifying this method
+  # runs correctly
+  assert_close("The transactions hash should be empty") do
+    @transactions.empty?
   end
 end
