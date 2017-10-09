@@ -14,8 +14,8 @@ class ExpectContext
     "<Expect #{@test_context.name}/#{self.name}>"
   end
   
-  def execute(events, flushed)
-    if @block.call(events, flushed)
+  def execute(events)
+    if @block.call(events)
       true
     else
       script_path = @test_context.script_context.ruby_script.script_path

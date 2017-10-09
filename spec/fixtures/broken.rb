@@ -1,9 +1,8 @@
-api_version 1
-
-register do |params|
+def api_version
+  1
 end
 
-filter do |event|
+def filter(event)
   event.set('foo', 'bar')
   [event]
 end

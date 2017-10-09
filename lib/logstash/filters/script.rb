@@ -10,7 +10,7 @@ class LogStash::Filters::Script < LogStash::Filters::Base
   config_name "script"
   
   # Path to the script
-  config :file, :validate => :path, :required => true
+  config :path, :validate => :path, :required => true
   
   # Parameters for this specific script
   config :script_params, :type => :hash, :default => {}
@@ -19,23 +19,20 @@ class LogStash::Filters::Script < LogStash::Filters::Base
   config :tag_on_exception, :type => :string, :default => "_script_filter_exception"
   
   def register
-    @file_contents = File.read file
-    @script = RubyScript.new(@file_contents, @file, script_params, @dlq_writer)
+    @script = RubyScript.new(@path, script_params, @dlq_writer)
     @script.register
     @script.test
     @dlq_writer = respond_to?(:execution_context) ? execution_context.dlq_writer : nil
-  rescue ::LogStash::Filters::Script::ScriptError => e
-    raise e
   end
   
   def self.check_result_events!(results)
     if !results.is_a?(Array)
-      raise "Custom script '#{file}' did not return an array from 'filter'. Only arrays may be returned!"
+      raise "Custom script did not return an array from 'filter'. Only arrays may be returned!"
     end
     
     results.each do |r_event|
       if !r_event.is_a?(::LogStash::Event)
-        raise "Custom script '#{file}' returned a non event object '#{r_event.inspect}'!" +
+        raise "Custom script returned a non event object '#{r_event.inspect}'!" +
               " You must an array of events from this function! To drop an event simply return nil."
       end
     end
@@ -49,7 +46,7 @@ class LogStash::Filters::Script < LogStash::Filters::Base
     rescue => e
       event.tag(@tag_on_exception)
       message = "Could not process event: " + e.message
-      @logger.error(message, :script_file => @file, 
+      @logger.error(message, :script_path => @path,
                              :class => e.class.name,
                              :backtrace => e.backtrace)
       return event
@@ -70,17 +67,7 @@ class LogStash::Filters::Script < LogStash::Filters::Base
     event.cancel unless returned_original
   end 
 
-  def flush(options)
-    # We hijack the final flush to act as close
-    # This lets us pass on final events to through the pipeline
-    if options[:final]
-      @script.close
-    else
-      @script.flush
-    end
-  end
-
   def periodic_flush
-    true
+    false
   end
 end

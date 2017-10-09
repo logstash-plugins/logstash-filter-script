@@ -9,10 +9,10 @@ class LogStash::Filters::Script::RubyScript
   
   attr_reader :script, :script_path, :dlq_writer
   
-  def initialize(script, script_path, parameters, dlq_writer)
-    @script = script
+  def initialize(script_path, parameters, dlq_writer)
+    @script = File.read(script_path)
     @script_path = script_path
-    @context = Context.new(self, script_path, parameters, @dlq_writer)
+    @context = Context.new(self, parameters, @dlq_writer)
   end
   
   def register
@@ -28,21 +28,13 @@ class LogStash::Filters::Script::RubyScript
       raise ::LogStash::Filters::Script::ScriptError.new(script_path, e), "Error during register"
     end
     
-    if !@context.filter_block.is_a?(Proc)
-      raise "Script does not define a filter! Please ensure that you have defined a filter block!"
+    if !@context.execution_context.methods.include?(:filter)
+      raise "Script does not define a filter! Please ensure that you have defined a filter method!"
     end
   end
   
   def execute(event)
     @context.execute_filter(event)
-  end
-  
-  def flush
-    @context.execute_flush()
-  end
-
-  def close
-    @context.execute_close()
   end
   
   def test

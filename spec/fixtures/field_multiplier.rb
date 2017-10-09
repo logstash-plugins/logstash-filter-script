@@ -1,28 +1,26 @@
 # You *must* declare the API version this script is written to
 # This prevents scripts from incorrectly running under other API versions
-api_version 1
+def api_version
+  1
+end
 
 # Disables mutex around the `filter` function
 # Only use this if you know your code is threadsafe!
-concurrency :shared 
+def concurrency
+  :shared 
+end
 
-register do |params|
+def register(params)
   @field = params['field']
   @multiplier = params['multiplier']
 end
 
-filter do |event|
+def filter(event)
   event.set(@field, event.get(@field) * @multiplier)
   # Filter blocks must return any events that are to be passed on
   # return a nil or [] here if all events are to be cancelled
   # You can even return one or more brand new events here!
   [event]
-end
-
-# This is just here to show how the flush function works
-# It just creates a meaningless event
-flush do
-  [::LogStash::Event.new("multiply_flush" => true)]
 end
 
 test "standard flow" do

@@ -1,5 +1,7 @@
-api_version 0
+def api_version
+  0
+end
 
-filter do |event|
+def filter(event)
   [event]
 end

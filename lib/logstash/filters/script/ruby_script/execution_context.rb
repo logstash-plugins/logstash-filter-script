@@ -22,6 +22,10 @@ class LogStash::Filters::Script::RubyScript::ExecutionContext
     end
   end
 
+  def register(params)
+    logger.debug("skipping register since the script didn't define it")
+  end
+
   def api_version(version)
     # noop here, all the real work here is done by the version check context
   end
@@ -30,4 +34,4 @@ class LogStash::Filters::Script::RubyScript::ExecutionContext
     "<ExecutionContext #{@__name__}>"
   end
 end
- 
+

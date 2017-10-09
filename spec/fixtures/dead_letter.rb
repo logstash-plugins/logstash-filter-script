@@ -1,6 +1,8 @@
-api_version 1
+def api_version
+  1
+end
 
-filter do |event|
+def filter(event)
   if event.get("foo") == "bar"
     dead_letter(event, "Foo == bar!")
     []

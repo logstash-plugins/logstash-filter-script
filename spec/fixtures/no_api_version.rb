@@ -1,3 +1,3 @@
-filter do |event|
+def filter(event)
   [event]
 end

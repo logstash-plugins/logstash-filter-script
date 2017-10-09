@@ -7,7 +7,7 @@ describe LogStash::Filters::Script do
   let(:script_filename) { 'field_multiplier.rb' }
   let(:script_path) { File.join(fixtures_path, script_filename)}
   let(:script_params) { { 'field' => 'foo', 'multiplier' => 2 } }
-  let(:filter_params) { { 'file' => script_path, 'script_params' => script_params} }
+  let(:filter_params) { { 'path' => script_path, 'script_params' => script_params} }
   let(:incoming_event) { ::LogStash::Event.new('foo' => 42) }
   
   subject(:filter) { ::LogStash::Filters::Script.new(filter_params) }
@@ -29,22 +29,6 @@ describe LogStash::Filters::Script do
         expect(incoming_event.get('foo')).to eq(84)
       end
     end
-    
-    describe "flushing" do
-      before(:each) do
-        filter.register 
-      end
-      
-      subject { filter.flush }
-      
-      it "should return the flush result" do
-        expect(subject.first.get("multiply_flush")).to eq(true)
-      end
-      
-      it "should flush the expected number of events" do 
-        expect(subject.size).to eq(1)
-      end
-    end
   end
   
   describe "scripts with failing test suites" do
@@ -57,16 +41,6 @@ describe LogStash::Filters::Script do
     end
   end
   
-  describe "transaction_aggregator.rb" do
-    let(:script_filename) { 'transaction_aggregator.rb' }
-    
-      it "should not error out during register" do
-      expect do 
-        filter.register
-      end.not_to raise_error
-    end
-  end
-
   describe "scripts with DLQ tests" do
     let(:script_filename) { 'dead_letter.rb' }
 
